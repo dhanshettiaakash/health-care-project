@@ -2,7 +2,7 @@ pipeline {
     agent any
     environment {
         DOCKERHUB_USER = 'aakki2503'
-        IMAGE_NAME = 'HealthCarePro'
+        IMAGE_NAME = 'healthcarepro'
         IMAGE_TAG = 'latest'
     }
     stages {
@@ -35,7 +35,8 @@ pipeline {
         }
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t ${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG} .'
+                sh 'docker buildx create --use || true'
+                sh 'docker buildx build -t ${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG} . --platform linux/amd64'
             }
         }
         stage('Login to Docker Hub') {
