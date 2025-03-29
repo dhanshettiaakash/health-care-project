@@ -1,60 +1,42 @@
-pipeline {
+pipeline{
     agent any
-    environment {
-        DOCKERHUB_USER = 'aakki2503'
-        IMAGE_NAME = 'healthcarepro'
-        IMAGE_TAG = 'latest'
-    }
-    stages {
-        stage('Checkout the code from GitHub') {
-            steps {
-                git url: 'https://github.com/dhanshettiaakash/health-care-project/'
-                echo 'GitHub URL checked out'
+    stages{
+        stage('checkout the code from github'){
+            steps{
+                 git url: 'https://github.com/dhanshettiaakash/health-care-project/'
+                 echo 'github url checkout'
             }
         }
-        stage('Compile Code with Akshat') {
-            steps {
-                echo 'Starting compilation'
+        stage('codecompile with akshat'){
+            steps{
+                echo 'starting compiling'
                 sh 'mvn compile'
             }
         }
-        stage('Run Tests with Akshat') {
-            steps {
+        stage('codetesting with akshat'){
+            steps{
                 sh 'mvn test'
             }
         }
-        stage('QA Check with Akshat') {
-            steps {
+        stage('qa with akshat'){
+            steps{
                 sh 'mvn checkstyle:checkstyle'
             }
         }
-        stage('Package with Akshat') {
-            steps {
+        stage('package with akshat'){
+            steps{
                 sh 'mvn package'
             }
         }
-        stage('Build Docker Image') {
-            steps {
-                sh 'docker buildx create --use || true'
-                sh 'docker buildx build -t ${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG} . --platform linux/amd64'
+        stage('run dockerfile'){
+          steps{
+               sh 'docker build -t myimg1 .'
+           }
+         }
+        stage('port expose'){
+            steps{
+                sh 'docker run -dt -p 8082:8082 --name c001 myimg1'
             }
-        }
-        stage('Login to Docker Hub') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'dock-password', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                    sh 'echo $PASSWORD | docker login -u $USERNAME --password-stdin'
-                }
-            }
-        }
-        stage('Push to Docker Hub') {
-            steps {
-                sh 'docker push ${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}'
-            }
-        }
-        stage('Run Container') {
-            steps {
-                sh 'docker run -dt -p 8082:8082 --name c001 ${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}'
-            }
-        }
+        }   
     }
 }
