@@ -2,62 +2,64 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "myimg1"
+        DOCKERHUB_USER = "aakki2503"                       // ✅ Your actual Docker Hub username
+        IMAGE_NAME = "myapp"
         IMAGE_TAG = "v1"
-        REGISTRY = "yourdockerhubusername" // replace with your actual Docker Hub username
+        FULL_IMAGE = "${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
     }
 
     stages {
-        stage('checkout the code from github') {
+        stage('Checkout the code from GitHub') {
             steps {
                 git url: 'https://github.com/dhanshettiaakash/health-care-project/'
-                echo 'github url checkout'
+                echo '✅ Code checked out from GitHub'
             }
         }
 
-        stage('codecompile with akshat') {
+        stage('Compile the code') {
             steps {
-                echo 'starting compiling'
+                echo '🔧 Starting compilation...'
                 sh 'mvn compile'
             }
         }
 
-        stage('codetesting with akshat') {
+        stage('Run unit tests') {
             steps {
                 sh 'mvn test'
             }
         }
 
-        stage('qa with akshat') {
+        stage('Run QA checks') {
             steps {
                 sh 'mvn checkstyle:checkstyle'
             }
         }
 
-        stage('package with akshat') {
+        stage('Package the app') {
             steps {
                 sh 'mvn package'
             }
         }
 
-        stage('build docker image') {
+        stage('Build Docker image') {
             steps {
-                sh 'docker build -t $REGISTRY/$IMAGE_NAME:$IMAGE_TAG .'
+                sh "docker build -t ${FULL_IMAGE} ."
             }
         }
 
-        stage('push docker image') {
+        stage('Push Docker image to Docker Hub') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                     sh 'echo $PASSWORD | docker login -u $USERNAME --password-stdin'
-                    sh 'docker push $REGISTRY/$IMAGE_NAME:$IMAGE_TAG'
+                    sh "docker push ${FULL_IMAGE}"
                 }
             }
         }
 
-        stage('deploy to kubernetes') {
+        stage('Deploy to Kubernetes') {
             steps {
                 sh '''
+                sed -i "s|image:.*|image: ${FULL_IMAGE}|" k8s/deployment.yaml
                 kubectl delete deployment myapp-deployment --ignore-not-found=true
                 kubectl apply -f k8s/deployment.yaml
                 kubectl apply -f k8s/service.yaml
